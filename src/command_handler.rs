@@ -1,13 +1,13 @@
 use crate::{get_user_input_text, Editor, UserInput};
 
 pub trait Command {
-    fn handle(&self, user_input: &UserInput, editor: &mut Editor);
+    fn handle(&self, user_input: &UserInput, editor: &mut Editor) -> Result<(), String>;
 }
 
 struct AddCommand;
 
 impl Command for AddCommand {
-    fn handle(&self, user_input: &UserInput, editor: &mut Editor) {
+    fn handle(&self, user_input: &UserInput, editor: &mut Editor) -> Result<(), String> {
         println!("add {:?}", user_input.tokens);
 
         let mut buffer = String::new();
@@ -16,9 +16,10 @@ impl Command for AddCommand {
 
         if user_input.tokens.len() < 2 {
             editor.append_text(user_text);
+            Ok(())
         } else {
             let index = user_input.tokens[1].parse::<usize>().unwrap();
-            editor.append_text_at(index, user_text);
+            editor.append_text_at(index, user_text)
         }
     }
 }
@@ -26,16 +27,22 @@ impl Command for AddCommand {
 struct DummyCommand;
 
 impl Command for DummyCommand {
-    fn handle(&self, user_input: &UserInput, editor: &mut Editor) {
+    fn handle(&self, user_input: &UserInput, editor: &mut Editor) -> Result<(), String> {
         println!("dummy {:?}", user_input.tokens);
-
-        editor.append_text("this is a dummy paragraph text".to_string());
+        let dummy_paragraph = "this is a dummy paragraph text".to_string();
+        if user_input.tokens.len() < 2 {
+            editor.append_text(dummy_paragraph);
+            Ok(())
+        } else {
+            let index = user_input.tokens[1].parse::<usize>().unwrap();
+            editor.append_text_at(index, dummy_paragraph)
+        }
     }
 }
 struct ReplaceCommand;
 
 impl Command for ReplaceCommand {
-    fn handle(&self, user_input: &UserInput, editor: &mut Editor) {
+    fn handle(&self, user_input: &UserInput, editor: &mut Editor) -> Result<(), String> {
         println!("replace {:?}", user_input.tokens);
 
         let mut buffer = String::new();
@@ -51,14 +58,14 @@ impl Command for ReplaceCommand {
                 Some(last) => last.replace(&search_text, &replace_text),
                 None => String::new(),
             };
-            editor.replace_paragraph(editor.text.len() - 1, new_paragarph);
+            editor.replace_paragraph(editor.text.len() - 1, new_paragarph)
         } else {
             let index = user_input.tokens[1].parse::<usize>().unwrap();
             let new_paragraph = match editor.text.get(index) {
                 Some(last) => last.replace(&search_text, &replace_text),
                 None => String::new(),
             };
-            editor.replace_paragraph(index, new_paragraph);
+            editor.replace_paragraph(index, new_paragraph)
         }
     }
 }
@@ -66,25 +73,27 @@ impl Command for ReplaceCommand {
 struct PrintCommand;
 
 impl Command for PrintCommand {
-    fn handle(&self, _user_input: &UserInput, editor: &mut Editor) {
+    fn handle(&self, _user_input: &UserInput, editor: &mut Editor) -> Result<(), String> {
         for (i, paragraph) in editor.text.iter().enumerate() {
             println!("{}: {}", i, paragraph)
         }
+        Ok(())
     }
 }
 struct DelCommand;
 
 impl Command for DelCommand {
-    fn handle(&self, user_input: &UserInput, editor: &mut Editor) {
+    fn handle(&self, user_input: &UserInput, editor: &mut Editor) -> Result<(), String> {
         println!("del {:?}", user_input.tokens);
 
+        if editor.text.is_empty() {
+            return Err("nothing to delete".to_string());
+        }
         if user_input.tokens.len() < 2 {
-            if !editor.text.is_empty() {
-                editor.delete_paragraph(editor.text.len() - 1);
-            }
+            editor.delete_paragraph(editor.text.len() - 1)
         } else {
             let index = user_input.tokens[1].parse::<usize>().unwrap();
-            editor.delete_paragraph(index);
+            editor.delete_paragraph(index)
         }
     }
 }

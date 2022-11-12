@@ -17,14 +17,30 @@ impl Editor {
     fn append_text(&mut self, paragraph: String) {
         self.text.push(paragraph);
     }
-    fn append_text_at(&mut self, index: usize, paragraph: String) {
+    fn append_text_at(&mut self, index: usize, paragraph: String) -> Result<(), String> {
+        if self.text.len() > index {
+            return Err("given Paragraph does not exist".to_string());
+        }
         self.text.insert(index, paragraph);
+        Ok(())
     }
-    fn delete_paragraph(&mut self, index: usize) {
+    fn delete_paragraph(&mut self, index: usize) -> Result<(), String> {
+        if self.text.len() > index {
+            return Err("given Paragraph does not exist".to_string());
+        }
         self.text.remove(index);
+        Ok(())
     }
-    fn replace_paragraph(&mut self, index: usize, new_paragraph_text: String) {
+    fn replace_paragraph(
+        &mut self,
+        index: usize,
+        new_paragraph_text: String,
+    ) -> Result<(), String> {
+        if self.text.len() > index {
+            return Err("given Paragraph does not exist".to_string());
+        }
         self.text[index] = new_paragraph_text;
+        Ok(())
     }
 }
 
@@ -78,8 +94,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     while !is_exit(&user_input) {
         match get_command_handler(&user_input) {
             Ok(handler) => {
-                handler.handle(&user_input, &mut editor);
-                println!("{:?}", editor);
+                match handler.handle(&user_input, &mut editor) {
+                    Ok(_) => {}
+                    Err(e) => {
+                        println!("{}", e);
+                    }
+                };
+                dbg!("{:?}", &editor);
             }
             Err(e) => {
                 println!("{}", e);
